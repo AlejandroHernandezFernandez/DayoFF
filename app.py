@@ -19,8 +19,7 @@ months = ["January", "February", "March",
 current_month = today.month 
 current_year = today.year
 num_days = calendar.monthrange(current_year,current_month)[1]
-first_weekday = calendar.monthrange(current_year, current_month)[0]
-
+first_weekday = (calendar.monthrange(current_year, current_month)[0] + 1) % 7
 # Function to display the Login Screen 
 def login_screen():
     st.title("Day oFF")
@@ -57,12 +56,12 @@ def main_app_screen():
     row = 0
     col1, col2, col3, col4 , col5, col6, col7 = st.columns(7)
     cols = [col1, col2, col3, col4, col5, col6, col7]
-    days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
     
     for i in range(7):
         cols[i].markdown(f''':orange[{days[i]}]''')
 
-    while day < num_days:
+    while day <= num_days:
         for col in range(7):
             if row == 0 and col < first_weekday:
                 with cols[col]:
@@ -70,17 +69,20 @@ def main_app_screen():
             else:
                 with cols[col]:
                     if day <= num_days:
-                        st.button(str(day))
+                        if st.button(f"{day}", key =f"{day}"):
+                            st.session_state.selected_day = day
                         day+=1
-                    else:
-                        st.write("")
         row +=1 
-        
-
-
     #-> We should later make these buttons be able to open a new screen where the info is displayed
     #->
     #->
+
+
+    if "selected_day" not in st.session_state:
+        st.session_state.selected_day = None
+
+    if st.session_state.selected_day:
+        day_screen(st.session_state.selected_day, days)
 
 
 
@@ -95,6 +97,31 @@ def main_app_screen():
     if st.sidebar.button("Log Out"):
         st.session_state.clear() # Clear all session state variables
         st.rerun() # Rerun to go back to the login screen
+
+
+
+#-> Function to display the info for the selected day
+def day_screen(selected_day, days):
+    date_obj = datetime.date(current_year, current_month, selected_day)
+    weekday_name = date_obj.strftime("%a")
+    st.subheader(f"Details for {weekday_name}, {selected_day}")
+
+    list_of_names = f"name_list{selected_day}"
+    if list_of_names not in st.session_state:
+        st.session_state[list_of_names] = []
+
+    name = st.text_input("NAME", key= f"name_input{selected_day}")
+    if st.button("Take this day off", key=f"add_button{selected_day}"):
+        if name.strip():
+            st.session_state[list_of_names].append(name.strip())
+
+    if st.session_state[list_of_names]:
+        st.write("People who have taken this day off")
+        for person in st.session_state[list_of_names]:
+            st.write(f"-{person}")
+
+
+
 
 # --- Main Application Logic ---
 if __name__ == "__main__":
